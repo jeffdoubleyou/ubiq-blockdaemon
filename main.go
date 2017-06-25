@@ -9,6 +9,7 @@ import (
     "github.com/go-redis/redis"
     "github.com/spf13/viper"
     "go.uber.org/zap"
+    "github.com/shopspring/decimal"
     "./struct"
 )
 
@@ -97,10 +98,10 @@ func main() {
             lastBlock, err = setLastBlock(redisClient, res)
             lastBlock++
         }
-        log.Debug("All cought up, waiting for a couple seconds");
+        log.Debugf("All cought up, waiting for a couple seconds");
         time.Sleep(2000*time.Millisecond)
         currentBlock = getCurrentBlockNumber()
-        //fmt.Println("Current Block:", currentBlock, " Last Block:", lastBlock)
+        log.Debugf("Current Block: %d Last Block: %d", currentBlock, lastBlock)
     }
 }
 
@@ -186,7 +187,7 @@ func populateTransactions(redisClient *redis.Client, block *BlockObject)(res boo
     timeStamp, _ := ParseQuantity(block.Timestamp)
     timeUnix := time.Unix(timeStamp, 0)
     date := fmt.Sprintf("%d-%d-%d", timeUnix.Year(), timeUnix.Month(), timeUnix.Day())
-    log.Infof("Importing %d transactions in block #%d", transactionCount, num)
+    log.Debugf("Importing %d transactions in block #%d", transactionCount, num)
     for transactionIndex < transactionCount {
         log.Debugf("Getting transaction idx %d out of %d", transactionIndex, transactionCount)
         var isContract int = 0;
@@ -254,12 +255,16 @@ func populateTransactions(redisClient *redis.Client, block *BlockObject)(res boo
 }
 
 func populateBalance(address string, blockHeight string)(bool) {
-   balance, err := EthGetBalance(address, blockHeight)
+   balanceWei, err := EthGetBalance(address, blockHeight)
+
+   balanceDec, _ := decimal.NewFromString(balanceWei.String())
+   balance := balanceDec.Div(decimal.New(1000000000000000000, 0))
+
    if(err != nil) {
        log.Errorf("Failed to get balance for %s: %s", address, err)
        return false
    }
-   redisErr := RedisClient.RPush(formatKey("balance_"+address), balance, 0).Err()
+   redisErr := RedisClient.RPush(formatKey("balance_"+address), balance.String()).Err()
    if(redisErr != nil) {
        log.Errorf("Failed to update balance for %s: %s", address, redisErr)
        return false
@@ -299,6 +304,7 @@ func getLastBlock(redisClient *redis.Client)(n int64) {
 func getCurrentBlockNumber()(n int64) {
     n, err := EthBlockNumber()
     if(err != nil) {
+        log.Errorf("Error getting current block number: %s", err)
         n = 0;
     }
     return
