@@ -97,10 +97,10 @@ func main() {
             lastBlock, err = setLastBlock(redisClient, res)
             lastBlock++
         }
-        log.Info("All cought up, waiting for a couple seconds");
+        log.Debug("All cought up, waiting for a couple seconds");
         time.Sleep(2000*time.Millisecond)
         currentBlock = getCurrentBlockNumber()
-        fmt.Println("Current Block:", currentBlock, " Last Block:", lastBlock)
+        //fmt.Println("Current Block:", currentBlock, " Last Block:", lastBlock)
     }
 }
 
@@ -283,12 +283,12 @@ func setLastBlock(redisClient *redis.Client, block *BlockObject)(num int64, err 
     if(err != nil) {
         return 0, err
     }
-    err = redisClient.Set(formatKey("last_block"), num, 0).Err()
+    err = redisClient.Set(formatKey("last_block_id"), num, 0).Err()
     return
 }
 
 func getLastBlock(redisClient *redis.Client)(n int64) {
-    res, err := redisClient.Get(formatKey("last_block")).Result()
+    res, err := redisClient.Get(formatKey("last_block_id")).Result()
     if(err != nil) {
         return 0;
     }
