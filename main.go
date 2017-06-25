@@ -204,7 +204,7 @@ func populateTransactions(redisClient *redis.Client, block *BlockObject)(res boo
             receipt, _ := EthGetTransactionReceipt(txn.Hash)
             if(receipt != nil && receipt.ContractAddress != "") {
                 log.Debugf("Transaction from %s was a contract execution at %s", txn.From, receipt.ContractAddress)
-                populateBalance(receipt.ContractAddress, block.Number)
+        //        populateBalance(receipt.ContractAddress, block.Number)
                 txn.To = receipt.ContractAddress;
                 isContract = 1;
             }
@@ -259,7 +259,7 @@ func populateBalance(address string, blockHeight string)(bool) {
        log.Errorf("Failed to get balance for %s: %s", address, err)
        return false
    }
-   redisErr := RedisClient.Set(formatKey("balance_"+address), balance, 0).Err()
+   redisErr := RedisClient.RPush(formatKey("balance_"+address), balance, 0).Err()
    if(redisErr != nil) {
        log.Errorf("Failed to update balance for %s: %s", address, redisErr)
        return false
