@@ -60,7 +60,7 @@ func main() {
     run := 1
 
     for run == 1 {
-        for lastBlock < currentBlock {
+        for lastBlock <= currentBlock {
             log.Infof("Going to get block #%d", lastBlock)
             res,err  := EthGetBlockByNumber(strconv.FormatInt(lastBlock, 10), true)
 
