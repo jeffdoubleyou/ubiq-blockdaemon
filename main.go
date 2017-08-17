@@ -199,13 +199,11 @@ func populateTransactions(redisClient *redis.Client, block *BlockObject)(res boo
         }
 
         // Sometimes I wish that I decided to do all of this conversion client side
-        value, _ := ParseQuantity(txn.Value)
-
+        value, _ := ParseQuantityBig(txn.Value)
         if(txn.To == "") {
             receipt, _ := EthGetTransactionReceipt(txn.Hash)
             if(receipt != nil && receipt.ContractAddress != "") {
                 log.Debugf("Transaction from %s was a contract execution at %s", txn.From, receipt.ContractAddress)
-        //        populateBalance(receipt.ContractAddress, block.Number)
                 txn.To = receipt.ContractAddress;
                 isContract = 1;
             }
@@ -214,7 +212,7 @@ func populateTransactions(redisClient *redis.Client, block *BlockObject)(res boo
         t := &blockwatcher.Transaction{
             Hash: txn.Hash,
             Timestamp: timeStamp,
-            Value: value,
+            Value: value.String(),
             From: txn.From,
             To: txn.To,
             Number: num,
